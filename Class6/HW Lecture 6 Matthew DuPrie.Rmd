@@ -1,0 +1,87 @@
+---
+title: "HW Lecture 6"
+author: "Matthew DuPrie"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For homework, make a function to automate these commands:
+
+
+```{r, eval = FALSE}
+library(bio3d)
+s1 <- read.pdb("4AKE")  # kinase with drug
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor") 
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor") 
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+Working through HW
+
+
+```{r, eval = FALSE}
+# Working step by step through code
+
+# This step will make sure bio3d package library is loaded
+library(bio3d)
+
+#This line successfully loads PDB file
+s1 <- read.pdb("5AKT")
+
+#This line trims above PDB file
+s1.chainA <- trim.pdb(s1, chain = "A", elety = "CA")
+
+#This defines vector of the b-factor values of alpha carbons of chain A of initial PDB structure
+s1.b <- s1.chainA$atom$b
+
+#This plots the b-factor as a function of the residue #
+plotb3(s1.b, sse = s1.chainA, typ = "l", ylab = "Bfactor")
+```
+
+
+
+
+
+
+This writes code for function chainfactor(x), in which x = "PDB file name", and which returns a plot of the b-factor of alpha-carbon as a function of the residue number.
+
+```{r}
+
+chainfactor <- function (x) {
+  # x is the name of PDB file, must be given in quotation marks
+  # Load bio3d package
+  library(bio3d)
+  
+  # import pdb data and save as s
+  s <- read.pdb(x)
+  
+  #next trim given pdb file
+  s.chainA <- trim.pdb(s, chain = "A", elety = "CA")
+  
+  # define vector of b-factor values for alpha carbons in chain A of given PDB structure
+  
+  s.b = s.chainA$atom$b
+  
+  # now plot b-factor as function of residue
+  plotb3(s.b, sse = s.chainA, type = "l", ylab = "B-factor")
+}
+
+```
+
+
+
+
+
