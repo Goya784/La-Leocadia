@@ -1,0 +1,188 @@
+---
+title: "Bioinformatics Class 7"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Functions again
+
+We can source any file of R code with the 'source'() function
+
+```{r}
+source("http://tinyurl.com/rescale-R")
+```
+
+let's make sure things are here
+```{r}
+ls()
+
+```
+
+Check our rescale function is working
+
+```{r, eval=FALSE}
+rescale(c(1:10, "string"))
+```
+
+Let's check if 'rescale2()' does any better
+
+```{r, eval=FALSE}
+rescale2(c(1:10, "string"))
+```
+
+
+
+## Function for finding  missing values in two datasets
+
+Write a 'both_na()' function to do this...
+```{r}
+x <- c( 1, 2, NA, 3, NA)
+y <- c(NA, 3, NA, 3,  4)
+is.na(x)
+```
+
+Function determines which positions are NA
+```{r}
+which( is.na(x) )
+
+```
+```{r}
+is.na(x)
+is.na(y)
+```
+
+Now want to write function that finds at what position both series x and y are NA, sum will give total amount of positions where this is true. 
+```{r}
+sum( is.na(x) & is.na(y))
+```
+
+My first function can start from this snippet :-)
+
+```{r}
+both_na2 <- function(x, y) {
+  ##Check for NA elements in both input vectors and don't allow
+    if(length(x) != length(y)) {
+   stop("Input x and y should be the same length")
+    }
+  sum( is.na(x) & is.na(y) )
+}
+```
+
+```{r}
+x <-  c(NA, NA, NA)
+y1 <- c( 1, NA, NA)
+y2 <- c( 1, NA, NA, NA)
+
+
+both_na2(x, y1, y2)
+```
+
+
+```{r}
+function(x,y) {
+  ##Check for NA elements in both input vectors and don't allow
+    if(length(x) != length(y)) {
+   stop("Input x and y should be the same length")
+    }
+  sum( is.na(x) & is.na(y))
+}
+```
+```{r}
+both_na2(x, y2)
+```
+
+
+```{r}
+both_na3 <- function(x, y) {
+  if(length(x) != length(y)) {
+    stop("Input x and y should be vectors of the same length")
+  }
+  na.in.both <- ( is.na(x) & is.na(y) )
+  na.number  <- sum(na.in.both)
+  na.which   <- which(na.in.both)
+  message("Found ", na.number, " NA's at position(s):", 
+          paste(na.which, collapse=", ") ) 
+  return( list(number=na.number, which=na.which) )
+}
+```
+
+```{r}
+x <- c( 1, 2, NA, 3, NA)
+y <- c(NA, 3, NA, 3,  4)
+
+both_na3(x,y)
+```
+
+
+```{r}
+ans$which
+```
+
+
+## And a last function that is actually useful
+
+```{r}
+x <- df1$IDs
+y <- df2$IDs
+
+x
+y
+```
+
+We can try the 'intersect()' function and the '%in%' functions
+
+```{r}
+intersect(x,y)
+x %in% y
+```
+
+We can use logical output in '%in%' to get at our data
+
+```{r}
+x[x %in% y]
+y[y %in% x]
+```
+
+
+Let's put these together as columns of a matrix
+
+
+```{r}
+cbind( x[ x %in% y ], y[ y %in% x ] )
+```
+
+
+```{r}
+cbind(c("Hello", "Help"), c("Please", "Me"))
+```
+
+
+Make new function
+```{r}
+gene_intersect <- function(x, y) { 
+   cbind( x[ x %in% y ], y[ y %in% x ] )
+}
+
+gene_intersect(x,y)
+```
+
+Let's try with data.frame input rather than vectors
+
+```{r}
+gene_intersect2 <- function(df1, df2) { 
+   cbind( df1[ df1$IDs %in% df2$IDs, ], 
+          df2[ df2$IDs %in% df1$IDs, "exp"] )
+}
+```
+
+```{r}
+
+gene_intersect2(df1, df2)
+```
+
+
+
+
