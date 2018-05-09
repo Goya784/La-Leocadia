@@ -31,5 +31,78 @@ percent
 ```
 
 
+Using bio3D
+
+Load the bio3D package....
+type install.packages(bio3D) if you get error message
+to list all functions:
+bio3d()
+to get help for all functions:
+help(package=bio3d)
+
+```{r}
+library(bio3d)
+```
+
+Read our HIV-Pr structure
+
+
+```{r}
+pdb <-read.pdb("1hsg")
+pdb
+```
+
+
+Q8. Use the Bio3D write.pdb() function to write out a new C-alpha atom only PDB file for viewing in VMD. 
+
+```{r}
+# Use select atom function to select only c-alpha
+ca.1hsg <-atom.select(pdb, "calpha")
+head(ca.1hsg)
+
+#write.pdb(pdb, file = new_pdb)
+
+
+
+```
+
+W/ instructor help
+
+```{r}
+inds.ligand <-  atom.select(pdb, "ligand")
+inds.protein <- atom.select(pdb, "protein")
+inds.protein
+
+
+```
+
+
+
+Check we have what we want
+
+```{r}
+pdb$atom[inds.ligand$atom,]
+```
+
+
+```{r}
+head(pdb$atom[inds.protein$atom,])
+```
+
+```{r}
+
+pdb.ligand <- trim.pdb(pdb, inds= inds.ligand)
+pdb.protein <- trim.pdb(pdb, inds=inds.protein)
+
+```
+
+```{r}
+write.pdb(pdb.ligand, file="1hsg_ligand.pdb")
+write.pdb(pdb.protein, file="1hsg_protein.pdb")
+```
+
+
+
+
 
 
