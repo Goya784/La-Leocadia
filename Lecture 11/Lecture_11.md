@@ -7,27 +7,32 @@ output:
     keep_md: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ## PDB statistics
 
 Import our PDB statistics CSV file and calculate percent structures by experimental method.
 
 
-```{r}
+
+```r
 p <- read.csv("Data Export Summary.csv", row.names = 1)
 ```
 
 
 
-```{r}
 
+```r
 percent <- (p$Total / sum(p$Total)) * 100
 names(percent) <- row.names(p)
 percent
+```
 
+```
+##               X-Ray                 NMR Electron Microscopy 
+##         89.51673340          8.71321614          1.51239392 
+##               Other        Multi Method 
+##          0.16986775          0.08778879
 ```
 
 
