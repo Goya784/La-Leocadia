@@ -16,7 +16,7 @@ source("http://bioconductor.org/biocLite.R")
 biocLite()
 
 # For this class, you'll also need DESeq2:
-biocLite("DESeq2")
+#biocLite("DESeq2")
 
 ```
 
@@ -256,7 +256,64 @@ pathview(gene.data=foldchanges, pathway.id="hsa04110")
 # A different PDF based output of the same data
 pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
 
+#Here is the default low resolution raster PNG output from the first pathview() call above:
+
+```
+![](hsa04110.pathview.pdf)
+
+```{r}
+## Focus on top 5 upregulated pathways here for demo purposes only
+keggrespathways <- rownames(keggres$greater)[1:5]
+
+# Extract the IDs part of each string
+keggresids = substr(keggrespathways, start=1, stop=8)
+keggresids
+```
+
+Finally, lets pass these IDs in keggresids to the pathview() function to draw plots for all the top 5 pathways.
+```{r}
+pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
 ```
 
 
+### Section 3. Gene Ontology (GO)
+We can also do a similar procedure with gene ontology. Similar to above, go.sets.hs has all GO terms. go.subs.hs is a named list containing indexes for the BP, CC, and MF ontologies. Let’s only do Biological Process.
+
+```{r}
+data(go.sets.hs)
+data(go.subs.hs)
+gobpsets = go.sets.hs[go.subs.hs$BP]
+
+gobpres = gage(foldchanges, gsets=gobpsets, same.dir=TRUE)
+
+lapply(gobpres, head)
+```
+
+
+###Section 4. Reactome Pathway Analysis
+Reactome is database consisting of biological molecules and their relation to pathways and processes. Reactome, such as many other tools, has an online software available (https://reactome.org/) and R package available (https://bioconductor.org/packages/release/bioc/html/ReactomePA.html).
+
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+
+
+```
+
+
+```{r}
+write.table(sig_genes, file="significant_genes.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+```
+Then, to perform pathway analysis online go to the Reactome website (https://reactome.org/PathwayBrowser/#TOOL=AT). Select “choose file” to upload your significant gene list. Then, select the parameters “Project to Humans”, then click “Analyze”.
+
+
+###Section 5. GO Analysis
+To perform Gene Set GO Enrichment online go to the website http://www.geneontology.org/page/go-enrichment-analysis. Paste your significant gene list from section 4. Then, select “biological process” and “homo sapiens”, and click submit.
+
+The sessionInfo() prints version information about R and any attached packages. It’s a good practice to always run this command at the end of your R session and record it for the sake of reproducibility in the future.
+
+```{r}
+sessionInfo()
+```
 
