@@ -1,0 +1,52 @@
+---
+title: "Class 15"
+author: "Matt DuPrie"
+date: "May 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Install Bioconductor
+```{r}
+source("http://bioconductor.org/biocLite.R")
+biocLite()
+
+# For this class, you'll also need DESeq2:
+biocLite("DESeq2")
+
+```
+
+
+```{r}
+library(DESeq2)
+```
+
+# Load the data files
+```{r}
+metaFile <- "GSE37704_metadata.csv"
+countFile <- "GSE37704_featurecounts.csv"
+
+```
+
+# Import metadata and take a peak
+```{r}
+colData = read.csv(metaFile, row.names=1)
+head(colData)
+```
+
+
+
+# Import countdata
+```{r}
+countData = read.csv(countFile, row.names=1)
+head(countData)
+```
+
+
+
+
+
