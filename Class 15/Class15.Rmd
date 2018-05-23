@@ -47,6 +47,216 @@ head(countData)
 ```
 
 
+```{r}
+# Note we need to remove the odd first $length col
+countData <- as.matrix(countData[,-1])
+head(countData)
+```
+
+
+
+```{r}
+# Filter count data where you have 0 read count across all samples.
+countData = countData[rowSums(countData)>1, ]
+head(countData)
+```
+
+
+```{r}
+dds = DESeqDataSetFromMatrix(countData=countData,
+                             colData=colData,
+                             design=~condition)
+dds = DESeq(dds)
+```
+A new DESeqDataSet is returned that contains all the results (and the input DESeqDataSet parameters) within it.
+
+Extracting out the tables of results we actually want from this object can be a bit tricky. The next section describes one common way to do this.
+
+
+
+
+Extracting our results table
+
+Calling the DESeq packages results() function on our DESeqDataSet without any arguments will extract the estimated log2 fold changes and p values like so:
+
+```{r}
+res <- results(dds, alpha = .05, lfcthreshold=2)
+res
+```
+
+The returned res object is not a standard R data.frame but one that carries extra meatadata on the meaning of the columns:
+```{r}
+mcols(res, use.names = TRUE)
+```
+
+We can also summarize the results with the DESeq2 specific version of the summary() function. This will report some additional useful information:
+```{r}
+summary(res)
+```
+
+
+Q. In the summary of our results printed above (and by default) the FDR level is set to 10% (i.e. adjusted p-value < 0.1) and the log2 fold change threshold is set to 0. Use the alpha and lfcThreshold input arguments to the results() function to change these to an FDR of 5% and a log2 fold change threshold of 2. Then use the summary() function to find out how many genes are up and down at these thresholds.
+
+
+You could also use the ever useful table() function on your output of the results() function like so:
+```{r}
+table(res$padj < 0.05)
+```
+
+```{r}
+table(res$log2FoldChange > 2)
+```
+
+Then combining to determine the number of genes that meet both the p value and log2 fold change thresholds (UP genes: 99; and DOWN genes: 134):
+```{r}
+table( res$padj < 0.05, res$log2FoldChange > 2)
+```
+
+
+
+```{r}
+# Make a new results object 'resSig' with only significant genes
+resSig <- subset(res, padj < 0.05)
+
+# Print the first 10 strongest DOWN genes
+ord.down <- order(resSig$log2FoldChange)
+head(resSig[ ord.down, ], 10)
+```
+
+
+
+Q. Do the same as above but print out the top 10 strongest up-regulated genes. HINT: see the help for the order() function to see how to return the decreasing ordered indices you will want for accesing your resSig result.
+
+```{r}
+ord.up <- order(resSig$log2FoldChange, decreasing=TRUE)
+head(resSig[ ord.up, ], 10)
+```
+
+
+
+
+
+## Annotating our genes and mapping to Entrez IDs
+Since we mapped and counted against the Ensembl annotation, our results only have information about Ensembl gene IDs. However, our pathway analysis downstream will use KEGG pathways, and genes in KEGG pathways are annotated with Entrez gene IDs. So lets add them as we did the last day.
+
+```{r}
+library("AnnotationDbi")
+#biocLite("org.Hs.eg.db")
+library("org.Hs.eg.db")
+```
+
+
+This is the organism annotation package (“org”) for Homo sapiens (“Hs”), organized as an AnnotationDbi database package (“db”), using Entrez Gene IDs (“eg”) as primary key. To get a list of all available key types, use:
+```{r}
+columns(org.Hs.eg.db)
+```
+
+We can use the mapIds() function to add individual columns to our results table. We provide the row names of our results table as a key, and specify that keytype=ENSEMBL. The column argument tells the mapIds() function which information we want, and the multiVals argument tells the function what to do if there are multiple possible values for a single input value. Here we ask to just give us back the first one that occurs in the database.
+```{r}
+res$symbol = mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="SYMBOL",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="ENTREZID",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+res$name =   mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="GENENAME",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+head(res, 10)
+```
+
+
+
+```{r}
+biocLite( c("pathview", "gage", "gageData") )
+
+```
+
+```{r}
+library(pathview)
+```
+
+
+
+```{r}
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+head(kegg.sets.hs, 3)
+```
+
+
+```{r}
+foldchanges = res$log2FoldChange
+names(foldchanges) = res$entrez
+head(foldchanges)
+```
+
+
+
+
+
+```{r}
+# Get the results
+keggres = gage(foldchanges, gsets=kegg.sets.hs, same.dir=TRUE)
+
+```
+
+Lets look at the result object. It is a list with three elements (“greater”, “less” and “stats”).
+
+```{r}
+attributes(keggres)
+```
+
+So it is a list object (you can check it with str(keggres)) and we can use the dollar syntax to access a named element, e.g.
+
+
+```{r}
+head(keggres$greater)
+```
+
+
+```{r}
+head(keggres$less)
+```
+
+Each keggres$greater and keggres$less object is data matrix with gene sets as rows sorted by p-value. Lets look at both up (greater), down (less), and statistics by calling head() with the lapply() function. As always if you want to find out more about a particular function or its return values use the R help system (e.g. ?gage or ?lapply).
+```{r}
+lapply(keggres, head)
+```
+
+
+Now, let’s process the results to pull out the top 5 upregulated pathways, then further process that just to get the IDs. We’ll use these KEGG pathway IDs downstream for plotting.
+```{r}
+## Sanity check displaying all pathways data
+pathways = data.frame(id=rownames(keggres$greater), keggres$greater)
+head(pathways)
+```
+
+Now, let’s try out the pathview() function from the pathview package to make a pathway plot with our result shown in color. To begin with lets manually supply a pathway.id (namely the first part of the "hsa04110 Cell cycle") that we could see from the print out above.
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110")
+
+```
+
+```{r}
+# A different PDF based output of the same data
+pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
+
+```
 
 
 
